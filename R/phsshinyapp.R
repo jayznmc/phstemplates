@@ -9,6 +9,7 @@
 #' @param git Logical: Initialise the project with Git.
 #' @param renv Logical: Initialise the project with package management using renv.
 #' @param overwrite Logical: Whether to overwrite directory at existing path when creating directory.
+#' @param basic_app Logical: Whether to use the basic shiny app or more detailed version.
 #' @return New project created according to the PHS R project structure.
 #' @export
 #' @examples
@@ -25,7 +26,8 @@ phsshinyapp <- function(
   phs_white_logo = TRUE,
   git = FALSE,
   renv = FALSE,
-  overwrite = FALSE
+  overwrite = FALSE,
+  basic_app = TRUE
 ) {
   # Checking if path already exists
   if (dir.exists(path)) {
@@ -53,12 +55,190 @@ phsshinyapp <- function(
     }
   }
 
+  # Condition for app type
+  if(basic_app){
+
+    # Making directory structure
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+    dir.create(file.path(path, "data"), showWarnings = FALSE)
+    dir.create(file.path(path, "pages"), showWarnings = FALSE)
+    dir.create(file.path(path, "functions"), showWarnings = FALSE)
+    dir.create(file.path(path, "www"), showWarnings = FALSE)
+
+    # Getting text from inst/
+    gitignore <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "gitignore.txt"
+    ))
+    rproj_settings <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "rproject_settings.txt"
+    ))
+
+    # Getting shiny files from inst/
+    readme <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "README.md"
+    ))
+    readme <- gsub("WRITE APP NAME HERE", app_name, readme)
+    setup_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "setup.R"
+    ))
+    css_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "shiny_css.css"
+    ))
+    css_code_phs <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "phs_style.css"
+    ))
+    core_functions <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "core_functions.R"
+    ))
+    intro_page_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny",
+      "intro_page.R"
+    ))
+    page_1_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "page_1.R"
+    ))
+    page_1_functions <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "page_1_functions.R"
+    ))
+    contact_page_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "contact_page.R"
+    ))
+    app_code <- readLines(system.file(
+      package = "phstemplates",
+      "text",
+      "shiny_basic",
+      "app.R"
+    ))
+
+    # Getting app preamble
+    app_preamble <- shiny_app_template(app_name = app_name, author = author)
+    app_code <- paste0(app_preamble, app_code, collapse = "\n")
+
+    if (!phs_white_logo) {
+      app_code <- gsub("phs-logo-white", "phs-logo", app_code)
+      css_code <- gsub(
+        "navbar-brand \\{color: var\\(--phs-purple\\); background-color: var\\(--phs-purple\\)\\}",
+        "navbar-brand \\{color: var\\(--phs-purple\\); background-color: var\\(--white\\)\\}",
+        css_code
+      )
+    }
+
+    # Write to index file
+    if (!renv) {
+      writeLines("", con = file.path(path, ".Rprofile"))
+    }
+    if (git) {
+      writeLines(gitignore, con = file.path(path, ".gitignore"))
+    }
+    writeLines(readme, con = file.path(path, "README.md"))
+    writeLines(
+      rproj_settings,
+      con = file.path(path, paste0(basename(path), ".Rproj"))
+    )
+    writeLines(app_code, con = file.path(path, "app.R"))
+    writeLines(setup_code, con = file.path(path, "setup.R"))
+
+    writeLines("", con = file.path(path, "functions", "intro_page_functions.R"))
+    writeLines(
+      page_1_functions,
+      con = file.path(path, "functions", "page_1_functions.R")
+    )
+    writeLines(
+      core_functions,
+      con = file.path(path, "functions", "core_functions.R")
+    )
+
+    writeLines(intro_page_code, con = file.path(path, "pages", "intro_page.R"))
+    writeLines(page_1_code, con = file.path(path, "pages", "page_1.R"))
+    writeLines(
+      contact_page_code,
+      con = file.path(path, "pages", "contact_page.R")
+    )
+
+    writeLines(css_code, con = file.path(path, "www", "styles.css"))
+
+    # Getting images needed for shiny app from inst
+    logo <- file.copy(
+      from = system.file(package = "phstemplates", "images", "phs-logo.png"),
+      to = file.path(path, "www", "phs-logo.png")
+    )
+    logo_white <- file.copy(
+      from = system.file(
+        package = "phstemplates",
+        "images",
+        "phs-logo-white.png"
+      ),
+      to = file.path(path, "www", "phs-logo-white.png")
+    )
+    favicon <- file.copy(
+      from = system.file(package = "phstemplates", "images", "favicon_phs.ico"),
+      to = file.path(path, "www", "favicon_phs.ico")
+    )
+
+    if (!logo | !favicon | !logo_white) {
+      message(
+        "PHS logo and favicon could not be copied. Please obtain these images for them to show in the shiny app."
+      )
+    }
+
+    if (git) {
+      git2r::init(file.path(getwd(), path))
+      git2r::commit(message = "Initial commit", all = TRUE, session = TRUE)
+    }
+
+    if (renv) {
+      if (!"renv" %in% utils::installed.packages()[, 1]) {
+        warning(
+          "renv is not installed. Now attempting to install...",
+          immediate. = TRUE
+        )
+        utils::install.packages("renv")
+      }
+
+      options(renv.consent = TRUE)
+      renv::init(project = file.path(getwd(), path))
+    }
+  }
+}else{
+
   # Making directory structure
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
   dir.create(file.path(path, "data"), showWarnings = FALSE)
-  dir.create(file.path(path, "pages"), showWarnings = FALSE)
   dir.create(file.path(path, "functions"), showWarnings = FALSE)
   dir.create(file.path(path, "www"), showWarnings = FALSE)
+  dir.create(file.path(path, "pages"), showWarnings = FALSE)
+  # Directory for each page
+  dir.create(file.path(path, "pages/page_1"), showWarnings = FALSE)
+  dir.create(file.path(path, "pages/page_2"), showWarnings = FALSE)
 
   # Getting text from inst/
   gitignore <- readLines(system.file(
@@ -76,20 +256,20 @@ phsshinyapp <- function(
   readme <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "README.md"
   ))
   readme <- gsub("WRITE APP NAME HERE", app_name, readme)
-  setup_code <- readLines(system.file(
+  global_code <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
-    "setup.R"
+    "shiny_large",
+    "global.R"
   ))
   css_code <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "shiny_css.css"
   ))
   css_code_phs <- readLines(system.file(
@@ -100,38 +280,50 @@ phsshinyapp <- function(
   core_functions <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "core_functions.R"
   ))
   intro_page_code <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "intro_page.R"
   ))
-  page_1_code <- readLines(system.file(
+  page_1_server <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
-    "page_1.R"
+    "shiny_large",
+    "page_1_server.R"
+  ))
+  page_1_ui <- readLines(system.file(
+    package = "phstemplates",
+    "text",
+    "shiny_large",
+    "page_1_ui.R"
   ))
   page_1_functions <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "page_1_functions.R"
   ))
   contact_page_code <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
+    "shiny_large",
     "contact_page.R"
   ))
-  app_code <- readLines(system.file(
+  server_code <- readLines(system.file(
     package = "phstemplates",
     "text",
-    "shiny",
-    "app.R"
+    "shiny_large",
+    "server.R"
+  ))
+  ui_code <- readLines(system.file(
+    package = "phstemplates",
+    "text",
+    "shiny_large",
+    "ui.R"
   ))
 
   # Collect into single text string
@@ -141,13 +333,17 @@ phsshinyapp <- function(
   css_code_phs <- paste(css_code_phs, collapse = "\n")
   css_code <- paste(css_code_phs, css_code, sep = "\n\n\n")
   readme <- paste(readme, collapse = "\n")
-  setup_code <- paste(setup_code, collapse = "\n")
+  server_code <- paste(server_code, collapse = "\n")
+  ui_code <- paste(ui_code, collapse = "\n")
   core_functions <- paste(core_functions, collapse = "\n")
+  chart_functions <- paste(chart_functions, collapse = "\n")
   intro_page_code <- paste(intro_page_code, collapse = "\n")
-  page_1_code <- paste(page_1_code, collapse = "\n")
+  intro_page_functions <- paste(intro_page_code, collapse = "\n")
+  page_1_server <- paste(page_1_server, collapse = "\n")
+  page_1_ui <- paste(page_1_ui, collapse = "\n")
   page_1_functions <- paste(page_1_functions, collapse = "\n")
   contact_page_code <- paste(contact_page_code, collapse = "\n")
-  app_code <- paste(app_code, collapse = "\n")
+  global_code <- paste(global_code, collapse = "\n")
 
   # Getting app preamble
   app_preamble <- shiny_app_template(app_name = app_name, author = author)
@@ -174,28 +370,29 @@ phsshinyapp <- function(
     rproj_settings,
     con = file.path(path, paste0(basename(path), ".Rproj"))
   )
-  writeLines(app_code, con = file.path(path, "app.R"))
-  writeLines(setup_code, con = file.path(path, "setup.R"))
 
-  writeLines("", con = file.path(path, "functions", "intro_page_functions.R"))
-  writeLines(
-    page_1_functions,
-    con = file.path(path, "functions", "page_1_functions.R")
-  )
-  writeLines(
-    core_functions,
-    con = file.path(path, "functions", "core_functions.R")
-  )
+  # General shiny app directory
+  writeLines(global_code, con = file.path(path, "global.R"))
+  writeLines(server_code, con = file.path(path, "server.R"))
+  writeLines(ui_code, con = file.path(path, "ui.R"))
 
-  writeLines(intro_page_code, con = file.path(path, "pages", "intro_page.R"))
-  writeLines(page_1_code, con = file.path(path, "pages", "page_1.R"))
-  writeLines(
-    contact_page_code,
-    con = file.path(path, "pages", "contact_page.R")
-  )
 
+  # Functions directory
+  writeLines(chart_functions, con = file.path(path, "functions", "chart_functions.R"))
+  writeLines(core_functions,con = file.path(path, "functions", "core_functions.R"))
+
+  # Pages directory
+  writeLines(intro_page_code, con = file.path(path, "pages/intro/", "intro_page.R"))
+  writeLines(intro_page_functions, con = file.path(path, "pages/intro/", "intro_page_functions.R"))
+
+  writeLines(page_1_server, con = file.path(path, "pages/page_1/", "page_1_server.R"))
+  writeLines(page_1_ui, con = file.path(path, "pages/page_1/", "page_1_ui.R"))
+  writeLines(page_1_functions, con = file.path(path, "pages/page_1/", "page_1_functions.R"))
+
+  writeLines(contact_page_code, con = file.path(path, "pages", "contact_page.R"))
+
+  # www directory
   writeLines(css_code, con = file.path(path, "www", "styles.css"))
-
   # Getting images needed for shiny app from inst
   logo <- file.copy(
     from = system.file(package = "phstemplates", "images", "phs-logo.png"),

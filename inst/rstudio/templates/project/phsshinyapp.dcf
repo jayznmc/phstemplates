@@ -17,6 +17,11 @@ Widget: CheckboxInput
 Label: Use PHS White Logo
 Default: On
 
+Parameter: basic_app
+Widget: CheckboxInput
+Label: Create a Basic Shiny App
+Default: On
+
 Parameter: git
 Widget: CheckboxInput
 Label: Initialise with Git
@@ -26,3 +31,4 @@ Parameter: renv
 Widget: CheckboxInput
 Label: Initialise with renv (package management)
 Default: Off
+
