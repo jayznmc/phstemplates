@@ -227,7 +227,7 @@ phsshinyapp <- function(
       options(renv.consent = TRUE)
       renv::init(project = file.path(getwd(), path))
     }
-  }
+
 }else{
 
   # Making directory structure
