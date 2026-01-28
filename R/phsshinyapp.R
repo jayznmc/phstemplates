@@ -111,7 +111,7 @@ phsshinyapp <- function(
     intro_page_code <- readLines(system.file(
       package = "phstemplates",
       "text",
-      "shiny",
+      "shiny_basic",
       "intro_page.R"
     ))
     page_1_code <- readLines(system.file(
