@@ -139,6 +139,22 @@ phsshinyapp <- function(
       "app.R"
     ))
 
+    # Collect into single text string
+    gitignore <- paste(gitignore, collapse = "\n")
+    rproj_settings <- paste(rproj_settings, collapse = "\n")
+    css_code <- paste(css_code, collapse = "\n")
+    css_code_phs <- paste(css_code_phs, collapse = "\n")
+    css_code <- paste(css_code_phs, css_code, sep = "\n\n\n")
+    readme <- paste(readme, collapse = "\n")
+    setup_code <- paste(setup_code, collapse = "\n")
+    core_functions <- paste(core_functions, collapse = "\n")
+    intro_page_code <- paste(intro_page_code, collapse = "\n")
+    page_1_code <- paste(page_1_code, collapse = "\n")
+    page_1_functions <- paste(page_1_functions, collapse = "\n")
+    contact_page_code <- paste(contact_page_code, collapse = "\n")
+    app_code <- paste(app_code, collapse = "\n")
+
+
     # Getting app preamble
     app_preamble <- shiny_app_template_basic(app_name = app_name, author = author)
     app_code <- paste0(app_preamble, app_code, collapse = "\n")
