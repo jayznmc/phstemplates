@@ -140,7 +140,7 @@ phsshinyapp <- function(
     ))
 
     # Getting app preamble
-    app_preamble <- shiny_app_template(app_name = app_name, author = author)
+    app_preamble <- shiny_app_template_basic(app_name = app_name, author = author)
     app_code <- paste0(app_preamble, app_code, collapse = "\n")
 
     if (!phs_white_logo) {
@@ -346,7 +346,7 @@ phsshinyapp <- function(
   global_code <- paste(global_code, collapse = "\n")
 
   # Getting app preamble
-  app_preamble <- shiny_app_template(app_name = app_name, author = author)
+  app_preamble <- shiny_app_template_large(app_name = app_name, author = author)
   app_code <- paste0(app_preamble, app_code, collapse = "\n")
 
   if (!phs_white_logo) {
@@ -434,4 +434,6 @@ phsshinyapp <- function(
     options(renv.consent = TRUE)
     renv::init(project = file.path(getwd(), path))
   }
+} # end if(basic_app)
 }
+
